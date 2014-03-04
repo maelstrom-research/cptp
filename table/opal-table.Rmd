@@ -1,0 +1,124 @@
+```{r configuration, echo=FALSE,message=FALSE,results='hide'}
+#
+# Global settings
+#
+url <- getOption("opal.url","https://cpt.maelstrom-research.org:444")
+username <- getOption("opal.username", "******") # add your own usrname
+password <- getOption("opal.password", "******") # add your own password
+datasource <- getOption("opal.datasource", "Atlantic_PATH")
+table <- getOption("opal.table","Atlantic_PILOT_FINAL_copy")
+withStatistics <- getOption("opal.withStatistics", TRUE)
+withGraphs <- getOption("opal.withGraphs", TRUE)
+withFullTable<-getOption("opal.withFullTable",TRUE)
+```
+
+```{r set-up, echo=FALSE,message=FALSE,results='hide'}
+# set up dictionary and data
+library(opal)
+o <- opal.login(username, password, url)
+
+if(withFullTable){
+  variables <- opal.variables(o, datasource, table)  #<--- use for all variable in table (option1)
+
+}else{
+  #names of variables we need in the report  #<---only the name of variables are given (option2)
+variables<-c('ADM_STUDY_ID','ADM_QX_VERSION','ADM_QX_LANGUAGE','ADM_QX_FORMAT','ADM_QX_COMPLETION','SDC_GENDER',
+             'SDC_RECRUITMENT_AGE_CALC','SDC_RECRUITMENT_AGE_SR','DIS_DIAB_EVER','DIS_DIAB_TYPE','DIS_DIAB_ONSET',
+             'SMK_EVER','SMK_CIG_CUR_FREQ','SMK_CIG_DAILY_CUR_QTY_CAT','PA_TOTAL_VIG_SHORT','PA_TOTAL_MOD_SHORT',
+             'PA_TOTAL_WALK_SHORT','PA_TOTAL_SHORT','PA_LEVEL_SHORT','PA_TOTAL_VIG_LONG','PA_TOTAL_MOD_LONG',
+             'PA_TOTAL_WALK_LONG','PA_TOTAL_LONG','PA_LEVEL_LONG','PA_SIT_AVG_TIME_WEEKDAY','PA_SIT_AVG_TIME_WEEKEND',
+             'PA_SIT_AVG_TIME_DAY','PA_TOTAL_SIT_TIME')
+}
+
+t <- opal.table(o, datasource, table, counts=TRUE)
+variableCount<-ifelse(class(variables)=='list',t$variableCount,length(variables))
+
+if (withStatistics | withGraphs) {
+  require(e1071)
+  #opal.execute(o, 'require(e1071)')
+  opal.assign(o,'D', paste0(datasource, ".", table),missings=T)
+}
+if (withGraphs) {
+  require(ggplot2)
+  opal.execute(o, 'require(ggplot2)')
+}
+```
+
+# Harmonized dataset report for `r table`
+
+<br/>
+
+Name of the report     | Harmonized dataset report for `r table`
+---------------------- | -------------------
+Project                | `r datasource`
+Table                  | `r table`
+Number of variables    | `r variableCount`
+Number of participants | `r t$valueSetCount`
+Date                   | `r as.character(Sys.Date())`
+
+## Variables
+
+```{r variables, results='asis', echo=FALSE}
+for (variable in variables) {
+  
+  if(withFullTable){
+      cat(paste0("* [", variable$name, "](#", gsub("\\.","_",variable$name),")\n")) # use this when u call all the variables (option1)
+  }else{
+    cat(paste0("* [", variable, "](#", gsub("\\.","_",variable),")\n"))
+  }
+  
+}
+```
+
+```{r run-variable-md, include=FALSE}
+out <- NULL
+for (variable in variables) {
+  if(!withFullTable) variable<-opal.variable(o,datasource,table,variable)  #<-get variable in opal directly one by one when option2
+  out <- c(out, knit_child('opal-variable.Rmd'), sep='\n')
+}
+```
+
+`r paste(out, collapse='\n')`
+
+```{r clean-up, results=FALSE,echo=FALSE}
+opal.logout(o)
+```
+
+<style type="text/css">
+@media print{
+  body {
+    font-size: 12px;
+  }
+  h2, h3 {
+    page-break-before: always;
+  }
+  .table{
+    page-break-inside: avoid;
+  }
+}  
+
+@media screen{
+  h3 {
+    border-top: solid 1px #ccc;
+    padding-top: 12px;
+  }
+}
+
+.navbar {
+  display: none;
+}
+
+#toc {
+  overflow: overlay;
+  max-height: 500px;
+}
+
+.table {
+  width: 0%;
+}
+
+.table td {
+  min-width: 200px;
+}
+
+</style>

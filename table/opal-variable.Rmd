@@ -1,0 +1,73 @@
+### `r variable$name`
+
+```{r results=FALSE,echo=FALSE}
+hasCategories <- (length(variable$categories) > 0)
+hasAttributes <- (length(variable$attributes) > 0)
+hasNonMissingCategory <- FALSE
+if (hasCategories) {
+  for (category in variable$categories) {
+    if (!category$isMissing) {
+      hasNonMissingCategory <- TRUE      
+      break;
+    }
+  }
+}
+isCategorical <- (hasCategories & hasNonMissingCategory) | variable$valueType == 'boolean'
+isNumerical <- (variable$valueType == 'integer' | variable$valueType == 'decimal') & !isCategorical
+allIsNA <- TRUE
+if (withStatistics) {
+  allIsNA <- opal.execute(o, paste0("all(is.na(D$", variable$name, "))"))
+}
+```
+
+#### Properties
+
+Property         | Value  
+---------------- | ----------------
+label            | `r paste(opal.attribute_values(variable$attributes, name="label"), collapse="<br/>")`
+definition       | `r paste(opal.attribute_values(variable$attributes, name="description"), collapse="<br/>")`
+Value type       | `r variable$valueType`
+Unit             | `r variable$unit`
+Entity type      | `r variable$entityType`
+
+
+#### Attributes
+
+Property          | Value  
+----------------- | ----------------
+opal:moderation   | `r opal.attribute_values(variable$attributes, namespace="opal", name="moderation")`
+opal:status       | `r opal.attribute_values(variable$attributes, namespace="opal", name="status")`
+maelstrom:comment | `r opal.attribute_values(variable$attributes, namespace="maelstrom", name="comment")`
+
+
+```{r, results='asis', eval=hasCategories, echo=FALSE}
+cat("#### Categories\n")
+```
+
+```{r, results='asis', eval=hasCategories, echo=FALSE}
+cat("Name | Label | Missing\n")
+cat("---------------- | ---------------- | ----------------\n")
+for (category in variable$categories) {
+  labels <- paste(opal.attribute_values(category$attributes, name="label"), collapse="<br/>")
+  row <- paste0(category$name, " | ", gsub("\\|","/", labels) ," | ")
+  if (category$isMissing) {
+    row <- paste0(row, "<span class='glyphicon glyphicon-ok'></span>")
+  }
+  cat(paste0(row, "\n"))
+}
+```
+
+```{r, results='asis', eval=withStatistics & allIsNA, echo=FALSE}
+cat("#### Statistics\n")
+cat("All participants are missing values: No statistics available\n")
+```
+
+```{r, include=FALSE, eval=withStatistics & isCategorical & !allIsNA} 
+outsummary <- knit_child('opal-variable-categorical.Rmd')
+```
+
+```{r, include=FALSE, eval=withStatistics & isNumerical & !allIsNA}
+outsummary <- knit_child('opal-variable-continuous.Rmd')
+```
+
+`r if(withStatistics & (isNumerical | isCategorical) & !allIsNA) paste(outsummary, collapse='\n')`
