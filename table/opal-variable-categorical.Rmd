@@ -1,0 +1,32 @@
+#### Statistics
+
+`r summary <- opal.execute(o, paste0("summary(D$", variable$name, ")"))`
+`r length <- opal.execute(o, paste0("length(which(!is.na(D$", variable$name, ")))"))`
+
+Descriptive Statistic | Value
+--------------------- | ----------------
+N                     | `r length`
+Mode                  | `r names(summary[which.max(summary)])`
+
+```{r, results='asis', echo=FALSE}
+cat("Category | Frequency | %\n")
+cat("---------------- | ---------------- | ----------------\n")
+for (category in variable$categories) {
+  freq <- as.numeric(summary[category$name])
+  pct <- (freq/length)*100
+  cat(paste0(category$name, " | ", freq," | ", pct,"| \n"))
+}
+freq <- as.numeric(summary["NA's"])    
+if (is.na(freq)) {
+  cat(paste0("Missing | 0  | 0\n"))   #change NA's into Missings <---
+} else {
+  pct <- (freq/length)*100
+  cat(paste0("Missing | ", freq," | ", pct,"| \n"))  #change NA's into Missings <--
+}
+```
+
+```{r, echo=FALSE, eval=withGraphs & !allIsNA, fig.width=7, fig.height=3}
+# see http://docs.ggplot2.org/current/geom_bar.html
+#opal.execute(o, paste0("qplot(", variable$name,", data=D)"))
+opal.execute(o, paste0("qplot(",variable$name, ", data=D,geom='bar',colour=I('white'),fill=",variable$name,")+scale_fill_brewer(palette='Dark2',na.value='grey70')"))
+```
