@@ -1,0 +1,248 @@
+```{r configuration, echo=FALSE,message=FALSE,results='hide'}
+##########################################
+######     IPAQ PATH SHORT FORM  ##########
+##########################################
+rm(list=ls())
+username<-'*******'  #add your own username #** 	#to change: will use getOption instead	
+password<-'*******'  #add your own password  #** 	#to change: will use getOption instead	
+
+###### CONNECT TO OPAL
+library(opal)
+
+url<-'https://cpt.maelstrom-research.org:444' #**
+o<-opal.login(username, password, url)		
+
+###SET WORKING and data DIRECTORY
+workingDir<-'/home/your/working/dir/here'    #**
+setwd(workingDir)
+
+datasource<-'Atlantic_PATH'					#to change: will use getOption instead
+table<-'Atlantic_PILOT_FINAL_copy'			#to change: will use getOption instead
+datafile<-paste0(datasource, ".", table)
+opal.assign(o,'DATA', datafile,missings=T)
+
+require(gmodels)
+#opal.execute(o,'require(gmodels)')  
+
+# use graphics or not
+withGraphs <-TRUE							#to change: will use getOption instead	
+withGraphs & require(ggplot2) & opal.execute(o,'require(ggplot2)')
+```
+
+# Annexe: VALIDATION
+
+## Exploratory Data analysis of `r table `
+
+<br/>
+
+### Module: Sociodemographic variables ##
+
+#### Number of participants that have value <35 years for age calculated: 
+
+`r opal.execute(o,'length(which(DATA$SDC_RECRUITMENT_AGE_CAL<35))') `
+
+#### Number of participants that have value <70 years for age calculated:
+
+`r opal.execute(o,'length(which(DATA$SDC_RECRUITMENT_AGE_CAL<70))') `
+
+#### Number of participants that have value <35 years for age self-reported:
+
+`r opal.execute(o,'length(which(DATA$SDC_RECRUITMENT_AGE_SR<35))') `
+
+#### Number of participants that have value <70 years for age self-reported:
+
+`r opal.execute(o,'length(which(DATA$SDC_RECRUITMENT_AGE_SR<70))') `
+
+#### Number of participants where age calculed does not match age self-reported + or - 1 year:
+
+`r opal.execute(o,'length(which((DATA$SDC_RECRUITMENT_AGE_CALC <  DATA$SDC_RECRUITMENT_AGE_SR - 1) | (DATA$SDC_RECRUITMENT_AGE_CALC > DATA$SDC_RECRUITMENT_AGE_SR + 1)))') `
+
+
+### Module: Diabetes variables ##
+
+<br/>
+
+#### Consistency check with diabetes ever 
+
+#### Table 1: DIS_DIAB_EVER * DIS_DIAB_TYPE
+
+``` {r comment=NA,results='markup',echo=FALSE}
+
+DIS_DIAB_EVER<-opal.execute(o,'DATA$DIS_DIAB_EVER')
+DIS_DIAB_TYPE<-opal.execute(o,'DATA$DIS_DIAB_TYPE')
+
+CrossTable(DIS_DIAB_EVER,DIS_DIAB_TYPE,digits=4,prop.r=T,prop.c=T,prop.t=F,prop.chisq=F,format='SPSS',missing.include=T)
+
+```
+
+<br/>
+
+#### Table 2: DIS_DIAB_EVER * DIS_DIAB_ONSET
+
+``` {r comment=NA,results='markup',echo=FALSE,message=FALSE,fig.height=11,fig.width=10}
+DIS_DIAB_ONSET<-opal.execute(o,'DATA$DIS_DIAB_ONSET')
+DIS_DIAB_ONSET<-as.factor(DIS_DIAB_ONSET)
+#CrossTable(DIS_DIAB_ONSET,DIS_DIAB_EVER,digits=4,prop.r=T,prop.c=T,prop.t=F,prop.chisq=F,format='SPSS',missing.include=T)
+
+ggplot()+geom_text(aes(DIS_DIAB_EVER,DIS_DIAB_ONSET,colour=DIS_DIAB_EVER,label=..count..),stat='bin',na.rm=T,parse=T)+guides(colour=FALSE)
+
+```
+
+<br/>
+
+#### Consistency check Diabetes type with gender
+
+#### Table 3: DIS_DIAB_TYPE * SDC_GENDER
+
+
+``` {r comment=NA,results='markup',echo=FALSE}
+SDC_GENDER<-opal.execute(o,'DATA$SDC_GENDER')
+
+CrossTable(SDC_GENDER,DIS_DIAB_TYPE,digits=4,prop.r=T,prop.c=T,prop.t=F,prop.chisq=F,format='SPSS',missing.include=T)
+
+```
+
+<br/>
+
+#### Number of participants where disease age of onset is greater than age calculated + 1 year
+
+`r opal.execute(o,'length(which (DATA$DIS_DIAB_ONSET!=97 & DATA$DIS_DIAB_ONSET > DATA$SDC_RECRUITMENT_AGE_CALC + 1))') `
+
+#### Statistics of age of onset for diabetes type I, diabetes type II  and diabetes type III:
+
+``` {r comment=NA,results='markup',echo=FALSE}
+DIS_DIAB_ONSET<-opal.execute(o,'DATA$DIS_DIAB_ONSET')
+DIS_DIAB_TYPE<-opal.execute(o,'DATA$DIS_DIAB_TYPE')
+
+ONSET_TYPE1<-DIS_DIAB_ONSET[which(DIS_DIAB_TYPE==1)]
+ONSET_TYPE2<-DIS_DIAB_ONSET[which(DIS_DIAB_TYPE==2)]
+ONSET_TYPE3<-DIS_DIAB_ONSET[which(DIS_DIAB_TYPE==3)]
+
+ONSET_TYPE1[ONSET_TYPE1==97]<-NA
+ONSET_TYPE2[ONSET_TYPE2==97]<-NA
+ONSET_TYPE3[ONSET_TYPE3==97]<-NA
+
+count1<-length(which(!is.na(ONSET_TYPE1)))
+count2<-length(which(!is.na(ONSET_TYPE2)))
+count3<-length(which(!is.na(ONSET_TYPE3)))
+
+cat('-Summary statistics of Age of onset for diabetes type1')
+summary1<-summary(ONSET_TYPE1)
+summary1["Number"]<-count1
+summary1
+
+cat('-Summary statistics of Age of onset for diabetes type2')
+summary2<-summary(ONSET_TYPE2)
+summary2["Number"]<-count2
+summary2
+
+cat('-Summary statistics of Age of onset for diabetes type3')
+summary3<-summary(ONSET_TYPE3)
+summary3["Number"]<-count3
+summary3
+
+```
+
+```{r diabetes_plot, echo=FALSE, fig.width=10, fig.height=11,eval=withGraphs,warning=FALSE,message=FALSE}
+ggplot()+geom_text(aes(x=DIS_DIAB_TYPE,factor(DIS_DIAB_ONSET),color=DIS_DIAB_TYPE,label=..count..),stat='bin',na.rm=T,parse=T)+guides(color=FALSE)
+```
+
+### Module: Smoking variables
+
+<br/>
+
+#### Consistency check with smoking ever
+
+#### Table 5: SMK_EVER * SMK_CIG_CUR_FREQ
+
+``` {r comment=NA,results='markup',echo=FALSE}
+
+SMK_EVER<-opal.execute(o,'DATA$SMK_EVER')
+SMK_CIG_CUR_FREQ<-opal.execute(o,'DATA$SMK_CIG_CUR_FREQ')
+
+CrossTable(SMK_EVER,SMK_CIG_CUR_FREQ,digits=4,prop.r=T,prop.c=T,prop.t=F,prop.chisq=F,format='SPSS',missing.include=T)
+
+```
+
+<br/>
+
+#### Consistency check with daily smoker
+
+#### Table 6: SMK_CIG_CUR_FREQ * SMK_CIG_DAILY_CUR_QTY_CAT
+
+``` {r comment=NA,results='markup',echo=FALSE}
+
+SMK_CIG_DAILY_CUR_QTY_CAT<-opal.execute(o,'DATA$SMK_CIG_DAILY_CUR_QTY_CAT')
+
+CrossTable(SMK_CIG_DAILY_CUR_QTY_CAT,SMK_CIG_CUR_FREQ,digits=4,prop.r=T,prop.c=T,prop.t=F,prop.chisq=F,format='SPSS',missing.include=T)
+
+```
+
+<br/>
+
+### Module IPAQ SITTING
+
+```{r sitting_plot, echo=FALSE, fig.width=8, fig.height=5,eval=withGraphs}
+PA_SIT_AVG_TIME_DAY<-opal.execute(o,'DATA$PA_SIT_AVG_TIME_DAY')
+PA_TOTAL_SIT_TIME<-opal.execute(o,'DATA$PA_TOTAL_SIT_TIME')
+ggplot()+scale_y_continuous()+scale_x_continuous()+geom_point(aes(PA_SIT_AVG_TIME_DAY,PA_TOTAL_SIT_TIME,colour=2),na.rm=T)+guides(colour=FALSE)
+
+```
+
+<br/>
+
+### Module IPAQ SHORT FORM
+
+```{r ipaq_short_plot,echo=FALSE,fig.width=12,fig.height=5,eval=withGraphs}
+
+PA_LEVEL_SHORT<-opal.execute(o,'DATA$PA_LEVEL_SHORT')
+PA_TOTAL_SHORT<-opal.execute(o,'DATA$PA_TOTAL_SHORT')
+ggplot()+geom_text(aes(PA_TOTAL_SHORT,PA_LEVEL_SHORT,label=as.character(PA_LEVEL_SHORT),color=PA_LEVEL_SHORT),na.rm=T,size=4,)+guides(color=FALSE)
+
+```
+
+
+
+```{r clean-up, results='hide',echo=FALSE}
+opal.logout(o)
+```
+
+<style type="text/css">
+.navbar {
+  display: none;
+}
+
+@media screen{
+  h3 {
+    border-top: solid 1px #ccc;
+    padding-top: 12px;
+  }
+}
+
+
+@media print{
+  body {
+    font-size: 12px;
+  }
+  h2, h3 {
+    page-break-before: always;
+  }
+  .table{
+    page-break-inside: avoid;
+  }
+} 
+
+#toc {
+  overflow: overlay;
+  max-height: 500px;
+}
+
+.table {
+  width: 0%;
+}
+
+.table td {
+  min-width: 200px;
+}
+
+</style>
