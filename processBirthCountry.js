@@ -19,7 +19,7 @@ val = newValue(val,'text');
 //---------------------------------------------------------
 if(val.eq('OTHER COUNTRY').value()){
   
-  var other = $('COUNTRY_MOTHER_OTHER');
+  var other = $('COUNTRY_BIRTH_OTHER');
 
   other.map({         // map and correct the typo. .... the dict is progressively updated with new typo or country
     'NA':null,
