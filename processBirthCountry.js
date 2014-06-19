@@ -1,4 +1,4 @@
-var val = $('COUNTRY_BIRTH');
+var val = $('COUNTRY_BIRTH');   
 
 if(val.any('Don\'t know','Prefer not to answer','NA').value()){
   val = null;
@@ -21,7 +21,7 @@ if(val.eq('OTHER COUNTRY').value()){
   
   var other = $('COUNTRY_MOTHER_OTHER');
 
-  other.map({
+  other.map({         // map and correct the typo. .... the dict is progressively updated with new typo or country
     'NA':null,
     "ADEN":"OTHER",
     "ALEPPO":"SYRIAN ARAB REPUBLIC",
