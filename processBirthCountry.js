@@ -20,6 +20,10 @@ val = newValue(val,'text');
 if(val.eq('OTHER COUNTRY').value()){
   
   var other = $('COUNTRY_BIRTH_OTHER');
+  
+  /*THIS DICTIONARY was built based on iso-3166 standard list
+  using R+regex+levenshtein distance for FUZZY match against all cptp datum.
+  The dict will undergo permanent updates with new typo or country */ 
 
   other.map({   
     'NA':null,
