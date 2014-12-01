@@ -1,45 +1,45 @@
-```{r configuration, echo=FALSE,message=FALSE,results='hide'}
-#
-# Global settings
-#
-url <- getOption("opal.url","https://cpt.maelstrom-research.org:444")
-username <- getOption("opal.username", "******") # add your own usrname
-password <- getOption("opal.password", "******") # add your own password
-datasource <- getOption("opal.datasource", "Atlantic_PATH")
-table <- getOption("opal.table","Atlantic_PILOT_FINAL_copy")
-withStatistics <- getOption("opal.withStatistics", TRUE)
-withGraphs <- getOption("opal.withGraphs", TRUE)
-withFullTable<-getOption("opal.withFullTable",TRUE)
+---
+output:
+  knitrBootstrap::knit_bootstrap:
+    encoding: UTF-8
+    input: "opal-table.Rmd"
+    boot_style: flatly
+    chooser: NULL
+    thumbsize: 7
+---
+```{r setChunkOptions, echo=FALSE,include=FALSE}
+library(knitr)
+opts_chunk$set(strip.white=TRUE,fig.align='center',collapse=TRUE,fig.width=8, fig.height=5,message=FALSE,verbose=FALSE) 
+```
+
+```{r ext, echo=FALSE,message=FALSE,results='hide', cache=FALSE}
+read_chunk('config.R')
 ```
 
 ```{r set-up, echo=FALSE,message=FALSE,results='hide'}
+<<connection>>
+<<configuration>>
 # set up dictionary and data
 library(opal)
-o <- opal.login(username, password, url)
+o <- opal.login(username, password, url) #log info from 'config.R' 
 
 if(withFullTable){
   variables <- opal.variables(o, datasource, table)  #<--- use for all variable in table (option1)
 
 }else{
   #names of variables we need in the report  #<---only the name of variables are given (option2)
-variables<-c('ADM_STUDY_ID','ADM_QX_VERSION','ADM_QX_LANGUAGE','ADM_QX_FORMAT','ADM_QX_COMPLETION','SDC_GENDER',
-             'SDC_RECRUITMENT_AGE_CALC','SDC_RECRUITMENT_AGE_SR','DIS_DIAB_EVER','DIS_DIAB_TYPE','DIS_DIAB_ONSET',
-             'SMK_EVER','SMK_CIG_CUR_FREQ','SMK_CIG_DAILY_CUR_QTY_CAT','PA_TOTAL_VIG_SHORT','PA_TOTAL_MOD_SHORT',
-             'PA_TOTAL_WALK_SHORT','PA_TOTAL_SHORT','PA_LEVEL_SHORT','PA_TOTAL_VIG_LONG','PA_TOTAL_MOD_LONG',
-             'PA_TOTAL_WALK_LONG','PA_TOTAL_LONG','PA_LEVEL_LONG','PA_SIT_AVG_TIME_WEEKDAY','PA_SIT_AVG_TIME_WEEKEND',
-             'PA_SIT_AVG_TIME_DAY','PA_TOTAL_SIT_TIME')
-}
-
+  <<variablelist>>
+ }  
 t <- opal.table(o, datasource, table, counts=TRUE)
 variableCount<-ifelse(class(variables)=='list',t$variableCount,length(variables))
 
 if (withStatistics | withGraphs) {
-  require(e1071)
-  #opal.execute(o, 'require(e1071)')
+  library(e1071)
+  opal.execute(o, 'require(e1071)')
   opal.assign(o,'D', paste0(datasource, ".", table),missings=T)
 }
 if (withGraphs) {
-  require(ggplot2)
+  library(ggplot2)
   opal.execute(o, 'require(ggplot2)')
 }
 ```
@@ -105,20 +105,25 @@ opal.logout(o)
 }
 
 .navbar {
-  display: none;
+  display: block;
 }
+
 
 #toc {
   overflow: overlay;
   max-height: 500px;
 }
+body h2, h3, h1, .knitr {
+    color: black;
+}
 
 .table {
-  width: 0%;
+  width: 70%;
+  color: black;
 }
 
 .table td {
-  min-width: 200px;
+  min-width: 50px;
 }
 
 </style>
