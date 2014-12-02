@@ -41,29 +41,29 @@ Sum of squares        | `r sum(value^2,na.rm=T)`
 ```{r,echo=FALSE,results='asis' }
 cat('Value| Frequency| Subtotal percentage|Total percentage\n')                             
 cat('----- | --------| -------------------| ---------------\n')
-cat('__Non-missing__ |      |      |      |\n')
+cat('__Non-missing__ |      \n')
 statpart1<-paste0('Not empty |',NotMissing,'|',round(NotMissing/NotMissing*100,2),'% |',round(NotMissing/NTotal*100,2),'%\n')
 cat(statpart1)
-cat('__Missing__    |       |      |       |\n')
-if(!hasNonMissingCategory){
+cat('__Missing__    |       \n')
+if(!hasNonMissingCategory ){
   for (cat in variable$categories) { 
-    cn<-cat$name
-    catCount<-length(which(value2==cn))
-    catSubFreq<-ifelse(NMissing==0,0,round((length(which(value2==cn)))/NMissing*100,2))
-    catTotFreq<-ifelse(NMissing==0,0,round((length(which(value2==cn)))/NTotal*100,2))
-    outputstat<-paste0(cn,'|',catCount,'|',catSubFreq,'%|',catTotFreq,'%')
-    cat(paste0(outputstat,'\n'))
+    if(category$isMissing){
+      cn<-cat$name
+      catCount<-length(which(value2==cn))
+      catSubFreq<-ifelse(NMissing==0,0,round((length(which(value2==cn)))/NMissing*100,2))
+      catTotFreq<-ifelse(NMissing==0,0,round((length(which(value2==cn)))/NTotal*100,2))
+      outputstat<-paste0(cn,'|',catCount,'|',catSubFreq,'%|',catTotFreq,'%')
+      cat(paste0(outputstat,'\n'))
+    }
   }
 }
 NaSubFreq<-ifelse(NMissing==0,0,round((length(which(is.na(value2))))/NMissing*100,2))
 NaTotFreq<-ifelse(NTotal==0,0,round((length(which(is.na(value2))))/NTotal*100,2))
-statNA<-paste0('N/A |',length(which(is.na(value2))),'|',NaSubFreq,'% |',NaTotFreq,'%')
-cat(paste0(statNA,'\n'))
+cat(paste0('N/A |',length(which(is.na(value2))),'|',NaSubFreq,'% |',NaTotFreq,'%\n'))
 TotSubMissingFreq<-ifelse(NMissing==0,0,round((length(which(is.na(value))))/NMissing*100,2))
 TotTotMissingFreq<-ifelse(NTotal == 0,0,round((length(which(is.na(value))))/NTotal*100,2))
-statTotalmissing<-paste0('Total |',length(which(is.na(value))),'|',TotSubMissingFreq,'% |',TotTotMissingFreq,'%')
-cat(paste0(statTotalmissing,'\n'))
-
+cat(paste0('_Subtotal_ |',length(which(is.na(value))),'|',TotSubMissingFreq,'% |',TotTotMissingFreq,'%\n')) #<---display subtotalmissing
+cat(paste0('__Total__ |',NTotal,'|','-',' |',100,'%\n')) #<---display Total stats
 ```
 
 

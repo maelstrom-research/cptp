@@ -59,6 +59,11 @@ cat("#### Statistics\n")
 cat("All participants are missing values: No statistics available\n")
 ```
 
+```{r, results='asis',eval= identical(variable$valueType,'text') & withStatistics & !allIsNA, echo=FALSE }
+cat("#### Statistics\n")
+cat("No statistics are displayed for open text type variable\n")
+```
+
 ```{r, include=FALSE, eval=withStatistics & isCategorical & !allIsNA,results='hide'} 
 outsummary <- knit_child('opal-variable-categorical.Rmd')
 ```

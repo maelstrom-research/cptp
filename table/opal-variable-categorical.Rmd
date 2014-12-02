@@ -1,28 +1,61 @@
 #### Statistics
 
-`r summary <- opal.execute(o, paste0("summary(D$", variable$name, ")"))`
-`r length <- opal.execute(o, paste0("length(which(!is.na(D$", variable$name, ")))"))`
+```{r, echo=FALSE}
+value <- opal.execute(o, paste0("(D$", variable$name, ")"))
+value2<-value    ##create a copy of value
+for(category in variable$categories){
+  if (category$isMissing){
+    value[which(value==category$name)]<-NA
+    
+  }
+}
+summary<-summary(value2)
+NValid <- length(which(!is.na(value)))
+NTotal <- length(value2)
+NMissing<-length(which(is.na(value)))
+```
 
 Descriptive Statistic | Value
 --------------------- | ----------------
-N                     | `r length`
+N                     | `r NValid`
 Mode                  | `r names(summary[which.max(summary)])`
 
 ```{r, results='asis', echo=FALSE}
-cat("Category | Frequency | %\n")
-cat("---------------- | ---------------- | ----------------\n")
+cat('Value| Frequency| Subtotal percentage|Total percentage\n')                             
+cat('----- | --------| -------------------| ---------------\n')
+cat('__Non-missing__ |      \n')
 for (category in variable$categories) {
-  freq <- as.numeric(summary[category$name])
-  pct <- round((freq/length)*100,2)
-  cat(paste0(category$name, " | ", freq," | ", pct,"| \n"))
+  if(!category$isMissing){
+    catname<-category$name
+    catCount <- as.numeric(summary[catname])
+    pctSub <- round((catCount/NValid)*100,2)
+    pctTot<- round((catCount/NTotal)*100,2)
+    cat(paste0(catname, " | ", catCount," | ", pctSub,"%|",pctTot," %\n"))
+  }
 }
-freq <- as.numeric(summary["NA's"])    
-if (is.na(freq)) {
-  cat(paste0("Missing | 0  | 0\n"))   #change NA's into Missings <---
-} else {
-  pct <- round((freq/length)*100,2)
-  cat(paste0("Missing | ", freq," | ", pct,"| \n"))  #change NA's into Missings <--
+cat(paste0('_Subtotal_ |',NValid,'|',100,'% |',round((NValid/NTotal)*100,2),'%\n')) #<---display subTotalvalid stats
+cat('__Missing__    |       \n')
+for (category in variable$categories) { 
+  if(category$isMissing){
+    catname<-category$name
+    catCount<-as.numeric(summary[catname])
+    pctSub<-ifelse(NMissing==0,0,round((length(which(value2==catname)))/NMissing*100,2))
+    pctTot<-ifelse(NMissing==0,0,round((length(which(value2==catname)))/NTotal*100,2))
+    cat(paste0(catname,'|',catCount,'|',pctSub,'%|',pctTot,'%\n')) 
+  }
 }
+
+naCount <- as.numeric(summary["NA's"])
+naCount<-ifelse(is.na(naCount),0,naCount)
+NaSubPct<-ifelse(NMissing==0,0,round(naCount/NMissing*100,2))
+NaTotPct<-ifelse(NTotal==0,0,round(naCount/NTotal*100,2))
+cat(paste0('N/A |',naCount,'|',NaSubPct,'% |',NaTotPct,'%\n'))  #<----display na stats
+missingTotal<-length(which(is.na(value)))
+TotSubMissingPct<-ifelse(NMissing==0,0,round(missingTotal/NMissing*100,2))
+TotTotMissingPct<-ifelse(NTotal == 0,0,round(missingTotal/NTotal*100,2))
+cat(paste0('_Subtotal_ |',length(which(is.na(value))),'|',TotSubMissingPct,'% |',TotTotMissingPct,'%\n')) #<---display subTotalmissing stats
+cat(paste0('__Total__ |',NTotal,'|','-',' |',100,'%\n')) #<---display Total stats
+
 ```
 
 ```{r, echo=FALSE, eval=withGraphs & !allIsNA}
