@@ -9,7 +9,9 @@ for(category in variable$categories){
     
   }
 }
-summary<-summary(value2)
+summary1<-summary(value)
+summary1["NA's"]<-NA           #remove NA's for MODE stat
+summary2<-summary(value2)
 NValid <- length(which(!is.na(value)))
 NTotal <- length(value2)
 NMissing<-length(which(is.na(value)))
@@ -18,7 +20,7 @@ NMissing<-length(which(is.na(value)))
 Descriptive Statistic | Value
 --------------------- | ----------------
 N                     | `r NValid`
-Mode                  | `r names(summary[which.max(summary)])`
+Mode                  | `r names(summary1[which.max(summary1)])`
 
 ```{r, results='asis', echo=FALSE}
 cat('Value| Frequency| Subtotal percentage|Total percentage\n')                             
@@ -27,7 +29,7 @@ cat('__Non-missing__ |      \n')
 for (category in variable$categories) {
   if(!category$isMissing){
     catname<-category$name
-    catCount <- as.numeric(summary[catname])
+    catCount <- as.numeric(summary2[catname])
     pctSub <- round((catCount/NValid)*100,2)
     pctTot<- round((catCount/NTotal)*100,2)
     cat(paste0(catname, " | ", catCount," | ", pctSub,"%|",pctTot," %\n"))
@@ -38,17 +40,18 @@ cat('__Missing__    |       \n')
 for (category in variable$categories) { 
   if(category$isMissing){
     catname<-category$name
-    catCount<-as.numeric(summary[catname])
+    catCount<-as.numeric(summary2[catname])
     pctSub<-ifelse(NMissing==0,0,round((length(which(value2==catname)))/NMissing*100,2))
     pctTot<-ifelse(NMissing==0,0,round((length(which(value2==catname)))/NTotal*100,2))
     cat(paste0(catname,'|',catCount,'|',pctSub,'%|',pctTot,'%\n')) 
   }
 }
 
-naCount <- as.numeric(summary["NA's"])
+naCount <- as.numeric(summary2["NA's"])
 naCount<-ifelse(is.na(naCount),0,naCount)
+
 NaSubPct<-ifelse(NMissing==0,0,round(naCount/NMissing*100,2))
-NaTotPct<-ifelse(NTotal==0,0,round(naCount/NTotal*100,2))
+NaTotPct<-round(naCount/NTotal*100,2)
 cat(paste0('N/A |',naCount,'|',NaSubPct,'% |',NaTotPct,'%\n'))  #<----display na stats
 missingTotal<-length(which(is.na(value)))
 TotSubMissingPct<-ifelse(NMissing==0,0,round(missingTotal/NMissing*100,2))

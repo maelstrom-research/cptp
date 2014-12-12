@@ -18,20 +18,21 @@ for(category in variable$categories){
 NotMissing<-length(which(!is.na(value)))
 NTotal<-length(value2)
 NMissing<-length(which(is.na(value)))
-
+minValue <- min(value,na.rm=T)
+meanValue <- mean(value,na.rm=T)
 ```
 
 Descriptive Statistic | Value
 --------------------- | ----------------
 N                     | `r NotMissing`
-Min                   | `r min(value,na.rm=T)`
+Min                   | `r minValue`
 Max                   | `r max(value,na.rm=T)`
-Mean                  | `r mean(value,na.rm=T)`
+Mean                  | `r meanValue`
 Median                | `r median(value,na.rm=T)`
-Standard Deviation    | `r sd(value,na.rm=T)`
-Variance              | `r var(value,na.rm=T)`
-Skewness              | `r skewness(value,na.rm=T)`
-Kurtosis              | `r kurtosis(value,na.rm=T)`
+Standard Deviation    | `r ifelse(meanValue == minValue,0,sd(value,na.rm=T))`
+Variance              | `r ifelse(meanValue==minValue,0,var(value,na.rm=T))`
+Skewness              | `r ifelse (meanValue == minValue,'-',skewness(value,na.rm=T))`
+Kurtosis              | `r ifelse(meanValue == minValue ,'-',kurtosis(value,na.rm=T))`
 Sum                   | `r sum(value,na.rm=T)`
 Sum of squares        | `r sum(value^2,na.rm=T)`
 
@@ -71,7 +72,7 @@ cat(paste0('__Total__ |',NTotal,'|','-',' |',100,'%\n')) #<---display Total stat
 ```{r, echo=FALSE, eval=withGraphs}
 # see http://docs.ggplot2.org/current/geom_histogram.html
 #plot(opal.execute(o, paste0("hist(D$", variable$name,")")))
-bin<-(max(value,na.rm=T)-min(value,na.rm=T))/20
+bin<-ifelse(meanValue==minValue,1,(max(value,na.rm=T)-min(value,na.rm=T))/20)
 #opal.execute(o, paste0("qplot(", value,",geom='histogram',binwidth=" ,bin, ",fill=I('lightblue3'),colour=I('yellow'),xlab=",variable$name,")"))
 qplot(value,geom='histogram',xlab=variable$name,binwidth=bin,fill=I('lightblue3'),colour=I('yellow'))
 ```
