@@ -113,6 +113,7 @@ is_Decimal<-function(value){
   if(!is_Number(value)){
     FALSE
   }else{
+    value<-as.numeric(value)
     schoolmath::is.decimal(value)
   }
 }
@@ -121,7 +122,8 @@ has_Decimal<-function(var){ #check that all valid-value (non missing) are Decima
   if(is_allNA(var)){
     FALSE
   }else { 
-    T %in% schoolmath::is.decimal(na.omit(var))
+    var<-as.numeric(na.omit(var))
+    T %in% schoolmath::is.decimal(var)
   }
 }
 
@@ -129,6 +131,7 @@ is_Integer<-function(value){
   if(!is_Number(value)){
     FALSE
   }else{
+    value<-as.numeric(value)
     schoolmath::is.whole(value)
   }
 }
@@ -137,7 +140,8 @@ is_all_Integer<-function(var){ #check that all valid-value (non missing) are Int
   if(is_allNA(var)){
     FALSE
   }else { 
-    all(schoolmath::is.whole(na.omit(var)))
+    var<-as.numeric(na.omit(var))
+    all(schoolmath::is.whole(var))
   }
 }
 
