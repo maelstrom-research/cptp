@@ -35,14 +35,14 @@ if(T %in% hasduplicate){
 }
 
 ####### update script for non-num in Num data
-if(T %in% (typedf$predValType =='numeric' & typedf$hasNONnumeric)){
+if(T %in% (typedf$predValType =='numeric' & typedf$hasNONnumeric & !typedf$hasduplicate)){
   message('** Defining non-num-removal script ...**')
   script_non_num<-def_script_clean_non_num(typedf)
   message('** OK **')
   
   #then update the script in the df based on the condition: in this case update only num vars with non-num errors
   message('** Updating non-num-removal script in typedf IF NON-NUM IS FOUND IN NUMERIC VAR** ')
-  typedf<-update_script(typedf,script_non_num,typedf$predValType =='numeric' & typedf$hasNONnumeric)
+  typedf<-update_script(typedf,script_non_num,typedf$predValType =='numeric' & typedf$hasNONnumeric & !typedf$hasduplicate)
   message('** OK non-num-removal-script updated in typedf**')
 }else{
   message ('**NO NON-NUM VALUE IN NUMERIC VARS** ')
