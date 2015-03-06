@@ -2,7 +2,7 @@
 # This script is a more general settings
 # it will contain  useful helper function
 ##################################################################################################################
-
+message(' LOADING ALL UTILITY FUNCTIONS ...')
 #########################################
 #utility functions are defined here
 #########################################
@@ -20,9 +20,13 @@ var.assign<-function(opal,datasource,table,variables=NULL){
   return (var.value)
 }
 
+################################################
+####      PATTERN FUNCTIONS
+###############################################
+
 ####function get vars with a specific pattern
 has_pattern<-function(var,pattern){
-  T %in% stringr::str_detect(var,pattern)
+  T %in% stringr::str_detect(var,stringr::ignore.case(pattern))
 }
 
 vars_pattern<-function(table,pattern){
@@ -65,6 +69,24 @@ has_duplicate<-function(var,pattern){
   return(bool)
 }
 
+has_dupl_in_table<-function(table,pattern){
+  table<-as.data.frame(table)
+  bool<-NULL
+  for (x in colnames(table)){
+    var<-table[,x]
+    if(has_pattern(var,pattern)){
+      if(has_duplicate(var,pattern)){
+        bool<-c(bool,TRUE)
+      }else{
+        bool<-c(bool,FALSE)
+      }
+    }else{
+      bool<-c(bool,FALSE)
+    }
+  }
+  return(bool)
+}
+
 vars_dup_value<-function(table,pattern){
   table<-as.data.frame(table)
   var_match<-vars_pattern(table,pattern)
@@ -81,12 +103,15 @@ vars_dup_value<-function(table,pattern){
   return(vars)
 }
 
-####################################################
+######################################
 #check if all the variable is missing value
 is_allNA<-function(var){
   all(is.na(var))
 }
 
+##########################################################
+#         2-      NUMERIC FUNCTIONS 
+######################################################
 #very utils function to test decimal vs integer
 ## function to test if a value is a number. ex: '2' is number
 #install.packages('schoolmath')
@@ -101,11 +126,17 @@ is_Number<-function(value){
   }
 }
 
-is_all_Number<-function(var){#check that all valid-value (non missing) are number
+is_all_Number<-function(var){
+  #check that all valid-value (non missing) are number
   if(is_allNA(var)){
     FALSE
   }else { 
-    all(sapply(na.omit(var),is_Number))
+    var<-na.omit(var)
+    if(T %in% suppressWarnings(is.na(as.numeric(var)))){
+      FALSE
+    }else{
+      all(suppressWarnings(!is.na(as.numeric(var))))
+    }
   }
 }
 
@@ -118,11 +149,13 @@ is_Decimal<-function(value){
   }
 }
 
-has_Decimal<-function(var){ #check that all valid-value (non missing) are Decimal
+has_Decimal<-function(var){ 
+  #check that all valid-value (non missing) are Decimal
+  var<-na.omit(suppressWarnings(as.numeric(var)))
   if(is_allNA(var)){
     FALSE
   }else { 
-    var<-as.numeric(na.omit(var))
+    
     T %in% schoolmath::is.decimal(var)
   }
 }
@@ -136,29 +169,82 @@ is_Integer<-function(value){
   }
 }
 
-is_all_Integer<-function(var){ #check that all valid-value (non missing) are Integer
+is_all_Integer<-function(var){ 
+  #check that all valid-value (non missing) are Integer
   if(is_allNA(var)){
     FALSE
   }else { 
-    var<-as.numeric(na.omit(var))
-    all(schoolmath::is.whole(var))
+    var<-na.omit(var)
+    if(T %in% suppressWarnings(is.na(as.numeric(var)))){
+      FALSE
+    }else{
+      all(schoolmath::is.whole(as.numeric(var)))
+    } 
   }
 }
 
-has_Number<-function(var){  #check if var has at least one value of type number
-  T %in% sapply(var,is_Number)
+has_Number<-function(var){ 
+  #check if var has at least one value of type number
+  T %in%  suppressWarnings(!is.na(as.numeric(var)))
 }
-#####
-#function to get valueType
-####
 
+#############################################
+#     TEXT FUNCTIONS
+#############################################
+has_non_numeric<-function(var){
+  if(is_allNA(var)){
+    FALSE
+  }else{
+    var<-na.omit(var)
+    T %in% suppressWarnings(is.na(as.numeric(var)))
+  }
+}
+
+####################################
+#####       TYPE PREDICTION
+###################################
+predict_num_or_text<-function(var){
+  #THIS FUNCTION ATTEMPTS TO PREDICT THE TYPE OF THE VAR...
+  #USEFUL TO DETECT ERROR IN DATA
+  
+  if(all(is.na(var))){
+    'missing'
+  }else{
+    BOOL<-suppressWarnings(!is.na(as.numeric(na.omit(var))))
+    df<-as.data.frame(prop.table(table(BOOL))*100)
+    colnames(df)<-c('BOOL','FREQ')
+    if(nrow(df) == 2){ #true & false
+      if(df$FREQ[1] < 50){ #false freq
+        'numeric'
+      }else if(df$FREQ[1] == 50){
+        'undetermined'
+      }else{
+        'text'
+      }
+    }else if(as.logical(df$BOOL)){ #TRUE?
+      paste0('numeric')
+    }else{
+      'text'
+    }
+  }
+}
+
+#prediction with a full table
+predict_ValueType<-function(table){
+  #This function attempt to predict valueType for var(not clean) in table
+  apply(table,2,predict_num_or_text)
+}
+
+
+#function to get valueType when data is clean
 get_valuetype<-function(table){
+  #This function give the valueType for very clean variables
   apply(table,2,function(var){
-    if(is_all_Number(var)){
-      if(is_all_Integer(var)){ 
-        'integer'
-      }else if(has_Decimal(var)){
+    if(predict_num_or_text(var) == 'numeric'){
+      if(has_Decimal(var)){ 
         'decimal'
+      }else {
+        'integer'
       }
     }else{
       'text'
