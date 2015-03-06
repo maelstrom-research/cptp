@@ -24,8 +24,8 @@ if (withStatistics) {
 
 Property         | Value  
 ---------------- | ----------------
-label            | `r paste(opal.attribute_values(variable$attributes, name="label"), collapse="<br/>")`
-definition       | `r paste(opal.attribute_values(variable$attributes, name="description"), collapse="<br/>")`
+label            | `r gsub('\\\n','<br/>',paste(opal.attribute_values(variable$attributes, name="label"), collapse="<br/>"))`
+definition       | `r gsub('\\\n','<br/>',paste(opal.attribute_values(variable$attributes, name="description"),collapse='<br/>'))`
 Value type       | `r variable$valueType`
 Unit             | `r variable$unit`
 Entity type      | `r variable$entityType`
@@ -33,12 +33,9 @@ Entity type      | `r variable$entityType`
 
 #### Attributes
 
-Property          | Value  
------------------ | ----------------
-opal:moderation   | `r opal.attribute_values(variable$attributes, namespace="opal", name="moderation")`
-opal:status       | `r opal.attribute_values(variable$attributes, namespace="opal", name="status")`
-maelstrom:comment | `r opal.attribute_values(variable$attributes, namespace="maelstrom", name="comment")`
-
+Property         | Value  
+-----------------| ----------------
+Mlstr_harmo:status      | `r opal.attribute_values(variable$attributes, namespace="Mlstr_harmo", name="status")`
 
 ```{r, results='asis', eval=hasCategories, echo=FALSE}
 cat("#### Categories\n")
@@ -62,11 +59,16 @@ cat("#### Statistics\n")
 cat("All participants are missing values: No statistics available\n")
 ```
 
-```{r, include=FALSE, eval=withStatistics & isCategorical & !allIsNA} 
+```{r, results='asis',eval= identical(variable$valueType,'text') & withStatistics & !allIsNA & !hasCategories, echo=FALSE }
+cat("#### Statistics\n")
+cat("No statistics are displayed for open text type variable\n")
+```
+
+```{r, include=FALSE, eval=withStatistics & isCategorical & !allIsNA,results='hide'} 
 outsummary <- knit_child('opal-variable-categorical.Rmd')
 ```
 
-```{r, include=FALSE, eval=withStatistics & isNumerical & !allIsNA}
+```{r, include=FALSE, eval=withStatistics & isNumerical & !allIsNA,results='hide'}
 outsummary <- knit_child('opal-variable-continuous.Rmd')
 ```
 
