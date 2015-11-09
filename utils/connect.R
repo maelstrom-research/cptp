@@ -4,13 +4,24 @@
 ##################################################################################################################
 
 #opal connection
-opts <- list(ssl.verifyhost=0,ssl.verifypeer=0,sslversion=3) #change often
-url<-######url of the server
-  
+#opts <- list(ssl.verifyhost=0,ssl.verifypeer=0,sslversion=3) #change often
+#url<-######url of the server
+
 #connect to server
-source(paste0('/home/smbatchou/teradisk/scripts/RscriptGeneral/utils/.opal-',server,'-connect.R'))
+source(paste0('~/login/.',server,'-login.R'))
 
 #test connection
 message('Testing connection ....')
-test<-!all(is.null(opal.datasources(o)))
-if (test) message(paste0('Connection to OPAL is OK'))
+
+dstest <- try(opal.datasources(o),silent = T)
+test<- !inherits(dstest, what = "try-error") & !inherits(o, what = "try-error")
+
+if (test) {
+  cat(paste0('Connection to server: ',o$name,' is OK'))
+}else {
+  message(paste0('Connection to server: ',o$name,' failed.\nPlease try again!'))
+}
+
+#clean intemediate object(s) in work space
+rm(dstest,test)
+
