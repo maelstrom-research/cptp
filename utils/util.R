@@ -1,3 +1,20 @@
+#################################################################################################
+#                                                                                               #
+#               SET of useful utilities to help exploratory analysis of OPAL data: obiba.org    #
+#               author: stephane Mbatchou @ MUHC                                                #
+#################################################################################################
+
+##### -----------Load dependencies
+if(i <- !suppressWarnings(require(data.table,warn.conflicts = F,quietly = T))){
+  install.packages('data.table')
+  library(data.table,quietly = T,warn.conflicts = F)
+}
+
+if(i <- !suppressWarnings(require(stringi,warn.conflicts = F,quietly = T))){
+  install.packages('stringi')
+  library(stringi,quietly = T,warn.conflicts = F)
+}
+
 ################# put everything in an evironment ##########
 my.util<-new.env()
 
@@ -62,7 +79,6 @@ my.util$vars.with.duplicate <- function(datatable,pattern = NULL)
 }
 
 
-
 ################################################## NUMERIC ################################################################
 ##########################################################
 #         2-      NUMERIC FUNCTIONS 
@@ -72,6 +88,14 @@ my.util$vars.with.duplicate <- function(datatable,pattern = NULL)
 my.util$is.allNA<-function(var)
 {
   all(is.na(var))
+}
+
+
+#return the name of variables with all values = null 
+my.util$vars.with.all.NA <- function(datatable)
+{
+  dtable<-as.data.table(datatable)
+  return (names(which( dtable[,sapply(.SD,is.allNA)])))
 }
 
 #######################################
@@ -138,7 +162,34 @@ my.util$is.Categorical <- function(var,numlevels) { #check if var is categorical
   as.logical(totest) & (totest <= numlevels)
 }
 
+
+####################################### STRING ###################################################################
 ################################TEXT ########################
+## CASE OF 'NA' string in opal
+my.util$has.NA.string <- function(var){ #check that the variable has at least one string of 'NA'
+  has.pattern(var,'^NA$')
+}
+
+#similar to is.allNA but the 'NA' are in text format in OPAL
+my.util$is.allNA.string <- function(var){
+  all(stri_detect_regex(var,'^NA$',case_insensitive=T))
+}
+
+#return the name of variables with 'NA' text 
+my.util$vars.with.NA.string <- function(datatable)
+{
+  dtable<-as.data.table(datatable)
+  return (names(which( dtable[,sapply(.SD,has.NA.string)])))
+}
+
+
+#return the name of variables with all values = 'NA' text 
+my.util$vars.with.all.NA.string <- function(datatable)
+{
+  dtable<-as.data.table(datatable)
+  return (names(which( dtable[,sapply(.SD,is.allNA.string)])))
+}
+
 #############################################
 #     TEXT FUNCTIONS
 #############################################
