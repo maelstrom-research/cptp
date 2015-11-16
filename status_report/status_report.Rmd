@@ -1,0 +1,176 @@
+```{r setChunkOptions, echo=FALSE,include=FALSE, cache=FALSE}
+library(knitr)
+#render_html()
+opts_chunk$set(strip.white=TRUE,fig.align='center',collapse=TRUE,fig.width=8, fig.height=5,message=FALSE,verbose=FALSE) 
+
+```
+
+```{r ext, echo=FALSE,message=FALSE,results='hide', cache=FALSE}
+read_chunk('config.status.R')
+```
+
+```{r set-up, echo=FALSE,message=FALSE,results='hide'}
+<<connection>>
+<<configuration>>
+<<utils>>
+# set up dictionary and data
+library(opal)
+
+o <- opal.login(username, password, url)#,opts = list(ssl.verifyhost=0,ssl.verifypeer=0,sslversion=3)) #log info from 'config.R' 
+t <- opal.table(o, datasource, table, counts=TRUE)
+
+if(withFullTable){
+  variables <- opal.variables(o, datasource, table)  #<--- use for all variable in table (option1)
+  variableCount<-t$variableCount
+}else{
+  #names of variables we need in the report  #<---only the name of variables are given (option2)
+  <<variablelist>>
+  variableCount<-length(variables)
+}  
+
+
+```
+
+```{r analytics, echo=FALSE,message=FALSE,results='asis'}
+x<-c('Project','Table','Number of Variables','Date')
+y<-c(datasource,table,variableCount,as.character(Sys.time()))
+
+df<-data.frame(x,y)
+names(df)<-c('Name of the report', paste0('Harmonized dataset report for ',table))
+
+cat(paste0('# Harmonization status for ',table,"\n"))
+kable(df)
+
+```
+
+```{r analytics-status, results='asis', echo=FALSE}
+status_complete<-name_complete<-name_impossible<-status_impossible<-status_other<-name_other<-commt_cmplt<-commt_impo<-commt_other<-NULL
+for (var in variables) {
+  
+  if(withFullTable){
+    variable_name<- var$name
+    
+  }else{
+    variable_name <- var
+    var<-opal.variable(o,datasource,table,var)
+  }
+ 
+  #retrive the status and comment
+  status_var<-opal.attribute_values(var$attributes, namespace=namespace, name="status")
+  commt <- gsub('\\\n','<br/>',opal.attribute_values(var$attributes, namespace=namespace, name="comment"))
+  has.comment <- length(commt)
+  commt_var <- ifelse(has.comment,commt,'...')
+  status_var <- tolower(status_var)
+  
+  has.status<-length(status_var)
+  if(has.status){
+    
+    if(is.complete <- grepl('complete|ok',status_var)){
+      name_complete<-c(name_complete,variable_name)
+      status_complete<-c(status_complete,asIconstatus('ok'))
+      commt_cmplt <- c(commt_cmplt,commt_var)
+      
+    }else if(is.impo <- grepl('impossible|no',status_var)){
+      name_impossible<-c(name_impossible,variable_name)
+      status_impossible<-c(status_impossible,asIconstatus('no'))
+      commt_impo <- c(commt_impo,commt_var)
+      
+    }else{
+      status_other<-c(status_other,asIconstatus(''))
+      name_other<-c(name_other,variable_name)
+      commt_other <- c(commt_other,commt_var)
+    }
+    
+  }else{
+    status_other<-c(status_other,asIconstatus(''))
+    name_other<-c(name_other,variable_name)
+    commt_other <- c(commt_other,commt_var)
+  }
+  #cat(paste0("* [", variable_name, "](#", gsub("\\.","_",variable_name),")=>",status_var,"\n"))
+  
+}
+
+out<-data.frame()
+#length(name_var)
+#cat(name_varstatus)
+```
+
+<br/>
+## Statistics 
+```{r harmo-status,results='asis',echo=FALSE}
+has.complete<-length(status_complete)
+has.impossible<-length(status_impossible)
+has.undetermined<-length(status_other)
+
+df_stat<-data.frame(has.complete, has.impossible, has.undetermined)
+kable(df_stat,col.names = c('COMPLETE','NOT FOUND','UNDETERMINED'),align = 'c')
+```
+<br/>
+
+
+```{r COMPLETE,results='asis',echo=FALSE}
+cat(paste0('### Variables [COMPLETE]: *',has.complete,'*'))
+if(has.complete){
+  df_complete<-data.frame(name = name_complete,status = status_complete,comments = commt_cmplt)
+  kable(df_complete,col.names = c('VARIABLES','STATUS','COMMENTS'))
+}else{
+  cat('\nNO Variables with COMPLETE Status yet...\n')
+}
+
+```
+
+
+```{r IMPOSSIBLE,results='asis',echo=FALSE}
+cat(paste0('### Variables [NOT FOUND]: *',has.impossible,'*'))
+if(has.impossible){
+  df_impossible<-data.frame(name = name_impossible,status = status_impossible,comments = commt_impo)
+  kable(df_impossible,col.names = c('VARIABLES','STATUS','COMMENTS'))
+}else{
+  cat('\nNO Variables with NOT FOUND Status...\n')
+}
+
+```
+
+
+```{r UNDETERMINED,results='asis',echo=FALSE}
+cat(paste0('### Variables [UNDETERMINED]: *',has.undetermined,'*'))
+if(has.undetermined){
+  df_other<-data.frame(name = name_other,status = status_other,comments = commt_other)
+  kable(df_other,col.names = c('VARIABLES','STATUS','COMMENTS'))
+}else{
+  cat('\nNO Variables with UNDETERMINED Status...\n')
+}
+
+```
+
+
+<style type="text/css">
+.navbar {
+  display: block;
+}
+
+.glyphicon-question-sign {
+  color: #99CCFF;
+}
+
+.glyphicon-ok-sign {
+  color: #009933;
+}
+
+.glyphicon-remove-sign {
+  color: #CC3300;
+}
+
+h2, h3, h1 {
+    color: #336699;
+}
+
+.table {
+  width: 80%;
+}
+
+.table td {
+  min-width: 20px;
+}
+</style>
+
