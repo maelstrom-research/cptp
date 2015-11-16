@@ -5,15 +5,16 @@
 #################################################################################################
 
 ##### -----------Load dependencies
-if(i <- !suppressWarnings(require(data.table,warn.conflicts = F,quietly = T))){
+if(!suppressWarnings(require(data.table,warn.conflicts = F,quietly = T))){
   install.packages('data.table')
   library(data.table,quietly = T,warn.conflicts = F)
 }
 
-if(i <- !suppressWarnings(require(stringi,warn.conflicts = F,quietly = T))){
+if(!suppressWarnings(require(stringi,warn.conflicts = F,quietly = T))){
   install.packages('stringi')
   library(stringi,quietly = T,warn.conflicts = F)
 }
+
 
 ################# put everything in an evironment ##########
 my.util<-new.env()
