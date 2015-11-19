@@ -152,9 +152,9 @@ my.util$is.Integer<-function(var){ #check that all valid-value (non missing) are
 }
 
 my.util$has.Number<-function(var){  #check if var has at least one value of type number
-  y <- suppressWarnings(as.numeric(var))
-  test <- (!is.na(y)) #vector of boolean(s)
-  return (T %in% test)
+  if(is.allNA(var)) return (FALSE)
+  var<-na.omit(var)
+  any(stri_detect_regex(var,pattern = '^\\d$|^\\d*\\.(?=\\d+$)'))
 }
 
 my.util$is.Categorical <- function(var,numlevels) { #check if var is categorical variable with max 10 categories 
