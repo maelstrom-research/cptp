@@ -5,15 +5,16 @@
 #################################################################################################
 
 ##### -----------Load dependencies
-if(i <- !suppressWarnings(require(data.table,warn.conflicts = F,quietly = T))){
+if(!suppressWarnings(require(data.table,warn.conflicts = F,quietly = T))){
   install.packages('data.table')
   library(data.table,quietly = T,warn.conflicts = F)
 }
 
-if(i <- !suppressWarnings(require(stringi,warn.conflicts = F,quietly = T))){
+if(!suppressWarnings(require(stringi,warn.conflicts = F,quietly = T))){
   install.packages('stringi')
   library(stringi,quietly = T,warn.conflicts = F)
 }
+
 
 ################# put everything in an evironment ##########
 my.util<-new.env()
@@ -114,7 +115,7 @@ my.util$is.decimal <-function(x)
 my.util$is.whole <-function(x)
 {
   x<-suppressWarnings(as.numeric(x))
-  result <- (x == floor(x))
+  result <- (x == floor(x)) & !is.boolean(x)
   result[which(is.na(result))]<-F
   return(result)
 }
@@ -128,7 +129,7 @@ my.util$is.whole <-function(x)
 my.util$is.Number<-function(var){#check that all valid-value (non missing) are number
   if(is.allNA(var)) return (FALSE)
   var<-na.omit(var)
-  !(any(is.na(suppressWarnings(as.numeric(var)))))
+  all(stri_detect_regex(var,pattern = '^\\d$|^\\d*\\.(?=\\d+$)'))
 }
 
 
@@ -151,15 +152,29 @@ my.util$is.Integer<-function(var){ #check that all valid-value (non missing) are
 }
 
 my.util$has.Number<-function(var){  #check if var has at least one value of type number
-  y <- suppressWarnings(as.numeric(var))
-  test <- (!is.na(y)) #vector of boolean(s)
-  return (T %in% test)
+  if(is.allNA(var)) return (FALSE)
+  var<-na.omit(var)
+  any(stri_detect_regex(var,pattern = '^\\d$|^\\d*\\.(?=\\d+$)'))
 }
 
 my.util$is.Categorical <- function(var,numlevels) { #check if var is categorical variable with max 10 categories 
   if(missing(numlevels)) numlevels <- 10
   totest <- dim(table(var))
   as.logical(totest) & (totest <= numlevels)
+}
+
+
+##############################boolean#################################
+my.util$is.boolean <-function(x){
+  stri_detect_regex(x,pattern = '^TRUE$|^FALSE$')
+}
+
+my.util$has.Boolean <- function(var){
+  any(is.boolean(var))
+}
+
+my.util$is.Boolean <-function(var){
+  all(is.boolean(na.omit(var)))
 }
 
 
@@ -209,11 +224,13 @@ my.util$predict.opal.type<-function(var){
   if(all(is.na(var))){
     'missing'
   }else{
-    BOOL<-suppressWarnings(!is.na(as.numeric(na.omit(var))))
-    val <- mean(BOOL) * 100
-    if (val == 50) 'undetermined'
-    else if (val>50) 'numeric'
-    else 'text'
+    num <-  mean(stri_detect_regex(a,pattern = '^\\d$|^\\d*\\.(?=\\d+$)'),na.rm = T)*100
+    if (num == 50) 'undetermined'
+    else if (num>50) 'numeric'
+    else {
+      bool <- mean(is.boolean(var),na.rm = T)*100
+      ifelse(bool > 50, 'boolean', ifelse(bool == 50 ,'undetermined':'text'))
+    }
   }
 }
 
@@ -223,7 +240,7 @@ my.util$predict.opal.type<-function(var){
 
 my.util$get.opal.type<-function(var){ #compute the type of a variable from a text data type(e.g '2.5' ==> decimal )
   if(!is.Number(var)){
-    type = 'text'
+    type = ifelse(is.Boolean(var),'boolean','text')
   }else { 
     if(is.Decimal(var)){
       type = 'decimal'
